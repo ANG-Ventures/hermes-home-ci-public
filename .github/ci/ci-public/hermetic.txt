@@ -1,0 +1,2 @@
+# Candidate subset only; excluded suites remain on private runners.
+pool_dropin_drain_writer_lint
