@@ -1,0 +1,1 @@
+{"suites":{"pool_dropin_drain_writer_lint":{"run":["export PATH=\"$PY312:$PATH\"","python3 -m pip install -q pytest","python3 -m pytest scripts/tests/test_pool_dropin_drain_writer_lint.py -q -rfEs -o addopts= -p no:cacheprovider"]}}}
