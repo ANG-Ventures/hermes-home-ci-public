@@ -1,0 +1,8 @@
+# Candidate one-suite closure; NOT cleared for publication.
+.github/ci/ci-public/hermetic.txt
+.github/ci/ci-public/run_suites.py
+.github/ci/ci-public/workflow.yml
+.github/ci/suites.json
+config/ci-public-allowlist.txt
+scripts/pool_dropin_drain_writer_lint.py
+scripts/tests/test_pool_dropin_drain_writer_lint.py
