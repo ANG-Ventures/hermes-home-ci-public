@@ -1,0 +1,57 @@
+# The CI-only mirror's ONLY workflow (card t_c09d9dcb). It lives here, not under .github/workflows/, so the private
+# repo never runs it; scripts/ci-public-export.sh copies it to .github/workflows/ci-public.yml in the export.
+# GitHub-HOSTED runners only (ci-public-lint CPX9 refuses any self-hosted label in the export's workflows).
+# Triggered by workflow_dispatch from the private repo's bridge (scripts/ci-public-bridge.py) at ref ci/<sha>.
+name: ci-public
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "census (step 2: run every suite, record) | gate (run .github/ci/ci-public/hermetic.txt)"
+        required: true
+        default: gate
+      source_sha:
+        description: "the hermes-home sha this export was built from (echoed into the run name)"
+        required: true
+      dispatch_id:
+        description: "unique bridge dispatch correlation token"
+        required: true
+run-name: "ci-public ${{ inputs.mode }} ${{ inputs.source_sha }} ${{ inputs.dispatch_id }}"
+permissions:
+  contents: read
+concurrency:
+  group: ci-public-${{ inputs.source_sha }}-${{ inputs.mode }}
+  cancel-in-progress: false
+jobs:
+  suites:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: |
+            3.9
+            3.11
+            3.12
+      - name: interpreter dirs ($PY39/$PY311/$PY312 as the self-hosted pool exports them)
+        run: |
+          for v in 3.9 3.11 3.12; do
+            d=$(dirname "$(command -v python$v)")
+            echo "PY${v/./}=$d" >> "$GITHUB_ENV"
+          done
+      - name: suites
+        run: |
+          python3.12 .github/ci/ci-public/run_suites.py --mode "${{ inputs.mode }}" \
+            --shard ${{ matrix.shard }} --shards 1 --out "ci-public-${{ matrix.shard }}.jsonl"
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          # the attempt in the name: a re-run's receipts read only that attempt's results (ci_public_receipts)
+          name: ci-public-${{ matrix.shard }}-a${{ github.run_attempt }}
+          path: ci-public-${{ matrix.shard }}.jsonl
+          retention-days: 14
